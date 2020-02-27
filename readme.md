@@ -11,7 +11,7 @@
 
 - [x] Maior robustez possível - **_Utilizamos docker sendo possível escalar a aplicação horizontalmente_**
  - [x] Tempo de resposta abaixo de 50ms - **_Embora nos testes feitos obter o token leva pouco acima de 50ms. A validação do token atende totalmente o requisito_**
- - [ ] Apresentar um teste de carga com x requisições por segundo e y threds - **_Foi feito testes com postman. Devido ao tempo não foi possível montar ambiente com JMETER._**
+ - [ ] Apresentar um teste de carga com x requisições por segundo e y threds - **_Foi feito testes com postman. Devido ao tempo não foi possível cenario ambiente com JMETER._**
 
 - [x] Apresente um esquema usando uma ferramenta que tenha domínio. Sugestão do Draw.io. **_investi tempo no read-me para documentar_**
 
@@ -46,7 +46,7 @@ Nossa aplicação segue o [ouath 2](https://oauth.net/2/):
  # Arquitetura de infraestrutura
  Para garantir que alta disponibilidade e deploy fosse facilitado utilizamos  [docker](https://www.docker.com/) e [rancher](https://rancher.com/).
  
- ![rancher](docs/rancher.png)
+ ![rancher](docs/rancher.PNG)
 
 Conforme podemos ver montamos uma infraestrutura com **loadbalancer(HA proxy)** scale =2.
  
