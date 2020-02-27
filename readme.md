@@ -41,7 +41,7 @@ Nossa aplicação segue o [ouath 2](https://oauth.net/2/):
  
  Com acess_token a **Aplicação Client** pode acessar os recursos protegidos dos demais microserviços.
   
- Para facilitar nosso case nossa apicação efetua o papel de **Servidor de autorização** e **Resource server** simulando os demais microserviços através do método http://localhost:8080/api/auth-engine/v1/validate?access_token=6f714cc3-d3c5-4ff9-a61b-5f3c8239f2de onde retorna 200 Ok, caso as credenciais passadas façam sentido.
+ Para facilitar nosso case nossa aplicação efetua o papel de **Servidor de autorização** e **Resource server** simulando os demais microserviços através do método http://localhost:8080/api/auth-engine/v1/validate?access_token=6f714cc3-d3c5-4ff9-a61b-5f3c8239f2de onde retorna status http 200 Ok, caso as credenciais passadas façam sentido.
  
  # Arquitetura de infraestrutura
  Para garantir que alta disponibilidade e deploy fosse facilitado utilizamos  [docker](https://www.docker.com/) e [rancher](https://rancher.com/).
@@ -207,7 +207,7 @@ Caso as credenciais sejam válidas nosso motor devolve o *access_token*, *token_
 ![validate-authorize](/docs/validate-authorize.PNG)
 
 Com access_token utilizamos como parametro no momento de autenticar para chamar o serviço de validação.
-Se o token for correto a api retornará 200 OK.
+Se o token for correto a api retornará status code http 200 OK.
 
 **OBS: Nos testes executados o serviço que valida token leva em torno 20ms.**
 
