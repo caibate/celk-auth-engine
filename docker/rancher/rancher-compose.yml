@@ -1,0 +1,31 @@
+version: '2'
+services:
+  loadbalancer:
+    scale: 2
+    start_on_create: true
+    lb_config:
+      certs: []
+      port_rules:
+        - hostname: ''
+          priority: 1
+          protocol: http
+          service: celk-auth-engine
+          source_port: 8080
+          target_port: 8080
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 42
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      reinitializing_timeout: 60000
+  celk-mysql:
+    scale: 1
+    start_on_create: true
+  celk-auth-engine:
+    scale: 3
+    start_on_create: true
+  celk-redis:
+    scale: 1
+    start_on_create: true

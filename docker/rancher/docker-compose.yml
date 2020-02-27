@@ -1,0 +1,45 @@
+version: '2'
+services:
+  loadbalancer:
+    image: rancher/lb-service-haproxy:v0.9.13
+    ports:
+      - 8080:8080/tcp
+    labels:
+      io.rancher.container.agent.role: environmentAdmin,agent
+      io.rancher.container.agent_service.drain_provider: 'true'
+      io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=loadbalancer=true
+      io.rancher.container.create_agent: 'true'
+      loadbalancer: 'true'
+  celk-mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: celk
+      MYSQL_DATABASE: celk
+      MYSQL_USER: celk
+      MYSQL_PASSWORD: celk
+    stdin_open: true
+    tty: true
+    ports:
+      - 3306:3306/tcp
+    labels:
+      io.rancher.container.pull_image: always
+  celk-auth-engine:
+    image: caibate/celk-auth-engine:2
+    environment:
+      SPRING_REDIS_HOST: celk-redis
+      SPRING_DATASOURCE_URL: jdbc:mysql://celk-mysql:3306/celk?createDatabaseIfNotExist=true&useSSL=false&verifyServerCertificate?=false&allowPublicKeyRetrieval=true
+    stdin_open: true
+    tty: true
+    links:
+      - celk-redis:celk-redis
+      - celk-mysql:celk-mysql
+    labels:
+      io.rancher.container.pull_image: always
+  celk-redis:
+    image: redis:6.0-rc1
+    stdin_open: true
+    tty: true
+    ports:
+      - 6379:6379/tcp
+    labels:
+      io.rancher.container.pull_image: always
