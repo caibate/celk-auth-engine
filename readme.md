@@ -60,13 +60,13 @@ Facilmente podemos escrever um catalog no rancher sendo possivel montar toda inf
 
 **_Obs: localmente optei por automatizar a subida do projeto com docker-compose.yml sem rancher para facilitar a execução._**
  
-#TO DO
+# TO DO
 Projeto foi concebido em torno de 10 horas. O que deixou diversos GAPS técnicos na solução, porém acredito que ela atenda os requisítos que o desafio exigia.
 
-Portanto alguns TO DO estão espalhados pelo código, coisas que poderiam ser facilmente resolvidos porém devido a foco no timebox e requisitos acordados ficaram pendentes como diz famoso engenheiro da linkedin
+Portanto alguns TO DO estão espalhados pelo código, coisas que poderiam ser facilmente resolvidos porém devido a foco no timebox e requisitos acordados ficaram pendentes como diz um famoso engenheiro da linkedin
  **_"Se você fez um código onde não se envergonha de absolutamente nada, provavelmente levou mais tempo do que deveria"_**.
  
- ###Pontos passiveis de melhoria
+ ### Pontos passiveis de melhoria
  - Criar um microserviço separado para validar o token gerado.
  - Criar duas lib para validar o token e efetuar requisições.
  - Customizar e tratar as exception de forma mais adequada.
@@ -82,7 +82,8 @@ Portanto alguns TO DO estão espalhados pelo código, coisas que poderiam ser fa
 ## Execução do projeto
 Pré-requisito para execução é estar com docker instalado.
 
-**docker-compose**
+**Executar docker-compose**
+
 ```sh
 cd docker
 
@@ -91,23 +92,111 @@ Starting celk-mysql ... done
 Starting celk-redis ... done
 Starting celk-auth-engine ... done
 ```
-Rancher:
+**Rancher** 
 
-Importar para dentro da stack os arquivos contidos na pasta docker/rancher e dar play.
+Para executar num ambiente de alta disponibilidade onde seja possível escalar horizontalmente.
+Sugerimos utilização de testes dentro do rancher. Portanto devemos importar para dentro da stack os arquivos contidos na pasta **docker/rancher**:
+
+RANCHER-COMPOSE.YML
+
+``` sh
+version: '2'
+services:
+  loadbalancer:
+    scale: 2
+    start_on_create: true
+    lb_config:
+      certs: []
+      port_rules:
+        - hostname: ''
+          priority: 1
+          protocol: http
+          service: celk-auth-engine
+          source_port: 8080
+          target_port: 8080
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 42
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      reinitializing_timeout: 60000
+  celk-mysql:
+    scale: 1
+    start_on_create: true
+  celk-auth-engine:
+    scale: 3
+    start_on_create: true
+  celk-redis:
+    scale: 1
+    start_on_create: true
+
+````
+DOCKER-COMPOSE.YML
+```sh
+version: '2'
+services:
+  loadbalancer:
+    image: rancher/lb-service-haproxy:v0.9.13
+    ports:
+      - 8080:8080/tcp
+    labels:
+      io.rancher.container.agent.role: environmentAdmin,agent
+      io.rancher.container.agent_service.drain_provider: 'true'
+      io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=loadbalancer=true
+      io.rancher.container.create_agent: 'true'
+      loadbalancer: 'true'
+  celk-mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: celk
+      MYSQL_DATABASE: celk
+      MYSQL_USER: celk
+      MYSQL_PASSWORD: celk
+    stdin_open: true
+    tty: true
+    ports:
+      - 3306:3306/tcp
+    labels:
+      io.rancher.container.pull_image: always
+  celk-auth-engine:
+    image: caibate/celk-auth-engine:2
+    environment:
+      SPRING_REDIS_HOST: celk-redis
+      SPRING_DATASOURCE_URL: jdbc:mysql://celk-mysql:3306/celk?createDatabaseIfNotExist=true&useSSL=false&verifyServerCertificate?=false&allowPublicKeyRetrieval=true
+    stdin_open: true
+    tty: true
+    links:
+      - celk-redis:celk-redis
+      - celk-mysql:celk-mysql
+    labels:
+      io.rancher.container.pull_image: always
+  celk-redis:
+    image: redis:6.0-rc1
+    stdin_open: true
+    tty: true
+    ports:
+      - 6379:6379/tcp
+    labels:
+      io.rancher.container.pull_image: always
+ ```
+
+
 
 ## Testando a aplicação
 
-Para efetuar o teste da aplicação baixar o [postman](https://www.postman.com/) e importar o arquivo docs/auth-celk.postman_collection.json.
+Para efetuar o teste da aplicação baixar o [postman](https://www.postman.com/) e importar o arquivo **docs/auth-celk.postman_collection.json**.
 
 Executar o metodo /oauth/token com objetivo de pegar um token
 
 ![authorization](/docs/Authorization.PNG)
 
-É necessar fornecer credencias para obter token o Aplicação cliente precisa ser confiavel Username e Password.
+É necessar fornecer credencias para obter token o Aplicação cliente precisa ser confiavel **Username e Password**.
  
 ![authorization-body](/docs/token-body.PNG)
 
-Agora que passamos as credencias precisamos identificar o cliente informando username, Password e grant_type conforme a imagem acima.
+Agora que passamos as credencias precisamos identificar o cliente informando os seguintes campos **username, Password e grant_type** conforme a imagem acima.
 
 ![authorization-response](/docs/token-response.PNG)
 
@@ -119,6 +208,8 @@ Caso as credenciais sejam válidas nosso motor devolve o *access_token*, *token_
 
 Com access_token utilizamos como parametro no momento de autenticar para chamar o serviço de validação.
 Se o token for correto a api retornará 200 OK.
+
+**OBS: Nos testes executados o serviço que valida token leva em torno 20ms.**
 
 #### API Docs
 ![api-docs](/docs/api-docs.PNG)
@@ -138,6 +229,6 @@ Se o token for correto a api retornará 200 OK.
 
 ## Meta
 
-Diego Caibaté – [Linkedin](https://www.linkedin.com/in/diego-caibat%C3%A9-3536901a/) – YourEmail@example.com
+Diego Caibaté – [Linkedin](https://www.linkedin.com/in/diego-caibat%C3%A9-3536901a/) – caibate@gmail.com
 
 [https://github.com/caibate/celk-auth-engine](https://github.com/caibate/celk-auth-engine)
